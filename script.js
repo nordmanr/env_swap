@@ -3,12 +3,17 @@ var CTX;
 var W,H;
 var UNIT_SIZE;
 var ENVIROMENT=[];
-var CHARACTER=[];
+var CHARACTER;
 var FALL_RATE=.03;
 var MOVE_RATE=.2;
 var FPS=60;
 var MAINLOOP;
 var ALTERNATE=[];
+
+
+
+
+
 
 
 function init() {
@@ -30,15 +35,12 @@ function init() {
     CANVAS.width = W;
     CANVAS.height = H;
 
-    CHARACTER.type = "RECT"
-    CHARACTER.left = W*.5-UNIT_SIZE*.5;
-    CHARACTER.top = H*.5-UNIT_SIZE*.5;
-    CHARACTER.height = UNIT_SIZE;
-    CHARACTER.width = UNIT_SIZE;
+    CHARACTER = new Rectangle(W*.5-UNIT_SIZE*.5, H*.5-UNIT_SIZE*.5, UNIT_SIZE, UNIT_SIZE);
     CHARACTER.color = "red";
-    CHARACTER.speed = 0;
+    CHARACTER.verticalVelocity = 0;
 
     ENVIROMENT.acceleration = UNIT_SIZE*FALL_RATE;
+    ENVIROMENT.color = "grey";
 
     loadLevel1();
     
@@ -54,7 +56,17 @@ function playButtonClicked() {
 
 function drawCharacter() {
     CTX.fillStyle = CHARACTER.color;
-    CTX.fillRect(CHARACTER.left, CHARACTER.top, CHARACTER.width, CHARACTER.height);
+    var drawElement = CHARACTER.toInsertableArray();
+    CTX.beginPath();
+    for(var i=0; i<drawElement.points.length; i++) {
+        if (i == 0) {
+            CTX.moveTo(drawElement.points[0].x, drawElement.points[0].y);
+        } else {
+            CTX.lineTo(drawElement.points[i].x, drawElement.points[i].y);
+        }
+    }
+    CTX.closePath();
+    CTX.fill();
 }
 
 function clearScreen() {
@@ -62,82 +74,90 @@ function clearScreen() {
 }
 
 function drawEnv() {
-    CTX.fillStyle = ENVIROMENT.color;
+    var drawElement;
+
     for (var i=0; i<ENVIROMENT.length; i++) {
-        CTX.fillStyle = ENVIROMENT[i].color;
-        switch (ENVIROMENT[i].type) {
-            case "RECT":
-                CTX.fillRect(ENVIROMENT[i].left, ENVIROMENT[i].top, ENVIROMENT[i].width, ENVIROMENT[i].height);
-                break;
-            case "TRI":
-                CTX.beginPath();
-                CTX.moveTo(ENVIROMENT[i].p1x, ENVIROMENT[i].p1y);
-                CTX.lineTo(ENVIROMENT[i].p2x, ENVIROMENT[i].p2y);
-                CTX.lineTo(ENVIROMENT[i].p3x, ENVIROMENT[i].p3y);
-                CTX.closePath();
-                CTX.fill();
+        drawElement = ENVIROMENT[i].toInsertableArray();
+
+        CTX.fillStyle = drawElement.color;
+        CTX.beginPath();
+        for(var j=0; j<drawElement.points.length; j++) {
+            if (j == 0) {
+                CTX.moveTo(drawElement.points[0].x, drawElement.points[0].y);
+            } else {
+                CTX.lineTo(drawElement.points[j].x, drawElement.points[j].y);
+            }
         }
+        CTX.closePath();
+        CTX.fill();
     }
 }
 
+//// !---
 function checkCollision(a, b) {
-    if (a.type == "RECT" && b.type == "RECT") {
-        return (a.left < b.left+b.width && a.left+a.width > b.left && a.top < b.top+b.height && a.top+a.height > b.top);
-    }
+    /*if (a.type == "RECT" && b.type == "RECT") {
+        return (a.p1x < b.p2x && a.p2x > b.p1x && a.p1y < b.p4y && a.p4y > b.p1y);
+    } else if (a.type == "RECT" && b.type == "TRI") {
+        return true;
+    }*/
 }
 
 
 function checkAndReactToCharacterCollision(){
-    for (var i=0; i<ENVIROMENT.length; i++) {
+    /*for (var i=0; i<ENVIROMENT.length; i++) {
         if (checkCollision(CHARACTER, ENVIROMENT[i])) {
             switch (ENVIROMENT[i].reaction) {
                 case "PUSH UP":
-                    CHARACTER.top = ENVIROMENT[i].top - CHARACTER.height;
+                    CHARACTER.p3y = ENVIROMENT[i].p1y;
+                    CHARACTER.p4y = ENVIROMENT[i].p1y;
+                    CHARACTER.p1y = ENVIROMENT[i].p1y - CHARACTER.height;
+                    CHARACTER.p2y = ENVIROMENT[i].p1y - CHARACTER.height;
                     CHARACTER.speed = 0;
                     break;
                 case "PUSH DOWN":
-                    CHARACTER.top = ENVIROMENT[i].top + ENVIROMENT[i].height;
+                    CHARACTER.p1y = ENVIROMENT[i].p3y;
+                    CHARACTER.p2y = ENVIROMENT[i].p3y;
+                    CHARACTER.p3y = ENVIROMENT[i].p3y + CHARACTER.height;
+                    CHARACTER.p4y = ENVIROMENT[i].p3y + CHARACTER.height;
                     CHARACTER.speed = 0;
                     break;
                 case "BOUNCE UP":
-                    CHARACTER.top = ENVIROMENT[i].top - CHARACTER.height;
+                    CHARACTER.p3y = ENVIROMENT[i].p1y;
+                    CHARACTER.p4y = ENVIROMENT[i].p1y;
+                    CHARACTER.p1y = ENVIROMENT[i].p1y - CHARACTER.height;
+                    CHARACTER.p2y = ENVIROMENT[i].p1y - CHARACTER.height;
                     CHARACTER.speed *= -.9;
                     break;
                 case "BOUNCE DOWN":
-                    CHARACTER.top = ENVIROMENT[i].top + ENVIROMENT[i].height;
+                    CHARACTER.p1y = ENVIROMENT[i].p3y;
+                    CHARACTER.p2y = ENVIROMENT[i].p3y;
+                    CHARACTER.p3y = ENVIROMENT[i].p3y + CHARACTER.height;
+                    CHARACTER.p4y = ENVIROMENT[i].p3y + CHARACTER.height;
                     CHARACTER.speed *= -.9;
                     break;
             }
         }else{
             
         }
-    }
-}
+    }*/
+}//// !---
+
 
 function doOneFrame(){
+    var element;
+
     clearScreen();
 
     // Move enviroment to the right - making it seem like you are going right
     for (var i=0; i<ENVIROMENT.length; i++) {
-        if (ENVIROMENT[i].move) {
-            switch (ENVIROMENT[i].type) {
-                case "RECT":
-                    ENVIROMENT[i].left -= UNIT_SIZE*MOVE_RATE;
-                    break;
-                case "TRI":
-                    ENVIROMENT[i].p1x -= UNIT_SIZE*MOVE_RATE;
-                    ENVIROMENT[i].p2x -= UNIT_SIZE*MOVE_RATE;
-                    ENVIROMENT[i].p3x -= UNIT_SIZE*MOVE_RATE;
-                    break;
-            }
-            
-        }
+        element = ENVIROMENT[i];
+        element.move();
     }
 
     // Character should be effected by gravity
-    CHARACTER.speed += ENVIROMENT.acceleration;
-    CHARACTER.top += CHARACTER.speed;
-    checkAndReactToCharacterCollision();
+    CHARACTER.increaseVerticalVelocity(ENVIROMENT.acceleration);
+    CHARACTER.move();
+    //checkAndReactToCharacterCollision();
 
     
     // Draw updated screen
