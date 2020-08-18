@@ -1,50 +1,5 @@
-function doIntersect(p1, q1, p2, q2) { 
-    // Find the four orientations needed for general and 
-    // special cases 
-    var o1 = orientation(p1, q1, p2); 
-    var o2 = orientation(p1, q1, q2); 
-    var o3 = orientation(p2, q2, p1); 
-    var o4 = orientation(p2, q2, q1); 
-  
-    // General case 
-    if (o1 != o2 && o3 != o4) 
-        return true; 
-  
-    // Special Cases 
-    // p1, q1 and p2 are colinear and p2 lies on segment p1q1 
-    if (o1 == 0 && onSegment(p1, p2, q1)) return true; 
-  
-    // p1, q1 and q2 are colinear and q2 lies on segment p1q1 
-    if (o2 == 0 && onSegment(p1, q2, q1)) return true; 
-  
-    // p2, q2 and p1 are colinear and p1 lies on segment p2q2 
-    if (o3 == 0 && onSegment(p2, p1, q2)) return true; 
-  
-    // p2, q2 and q1 are colinear and q1 lies on segment p2q2 
-    if (o4 == 0 && onSegment(p2, q1, q2)) return true; 
-  
-    return false; // Doesn't fall in any of the above cases 
-} 
-function onSegment(p, q, r) { 
-    if (q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) && 
-        q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y)) 
-    return true; 
-  
-    return false; 
-}  
-// To find orientation of ordered triplet (p, q, r). 
-// The function returns following values 
-// 0 --> p, q and r are colinear 
-// 1 --> Clockwise 
-// 2 --> Counterclockwise 
-function orientation(p, q, r) {
-    var val = (q.y - p.y) * (r.x - q.x) - 
-            (q.x - p.x) * (r.y - q.y); 
-  
-    if (val == 0) return 0; // colinear 
-  
-    return (val > 0)? 1: 2; // clock or counterclock wise 
-}
+
+
 
 
 class Point {
@@ -92,9 +47,14 @@ class Shape {
     set verticalVelocity(val) {
         this._verticalVelocity = val;
     }
+    get verticalVelocity(){
+        return this._verticalVelocity;
+    }
     increaseVerticalVelocity(inc) {
         this._verticalVelocity += inc;
     }
+
+    toInsertableArray() {}
 }
 
 class Rectangle extends Shape {
@@ -121,6 +81,9 @@ class Rectangle extends Shape {
         this._p3.y = val + this._height;
         this._p4.y = val + this._height;
     }
+    get top(){
+        return this._top;
+    }
     set left(val) {
         this._left = val;
         this._p1.x = val;
@@ -138,6 +101,9 @@ class Rectangle extends Shape {
         this._p3.y = this._p1.y + this._height;
         this._p4.y = this._p1.y + this._height;
     }
+    get height(){
+        return this._height;
+    }
 
     toInsertableArray() {
         var drawElement = [];
@@ -151,63 +117,159 @@ class Rectangle extends Shape {
     }
 
     move() {
-        this._p1.x += this._horizontalVelocity; 
-        this._p2.x += this._horizontalVelocity;
-        this._p3.x += this._horizontalVelocity;
-        this._p4.x += this._horizontalVelocity;
-        this._left = this._p1.x;
-         
-        this._p1.y += this._verticalVelocity;
-        this._p2.y += this._verticalVelocity;
-        this._p3.y += this._verticalVelocity;
-        this._p4.y += this._verticalVelocity;
-        this._top = this._p1.y;
+        this.left = this._p1.x + this._horizontalVelocity;
+        this.top = this._p1.y + this._verticalVelocity;
+    }
+
+    snapToLineSegment(sideToSnapWith, snapToThisLineP1, snapToThisLineP2){
+        var yDelta = snapToThisLineP2.y-snapToThisLineP1.y;
+        var xDelta = snapToThisLineP2.x-snapToThisLineP1.x;
+        var riseOverRun = yDelta/xDelta;
+        var runOverRise = (riseOverRun==0 ? 99999999 : 1/riseOverRun);
+
+        switch(sideToSnapWith){
+            case "TOP":
+                break;
+            case "RIGHT":
+                break;
+            case "BOTTOM":
+                this._p4.y = snapToThisLineP1.y + riseOverRun*(this._p4.x-snapToThisLineP1.x);
+                this._p3.y = snapToThisLineP1.y + riseOverRun*(this._p3.x-snapToThisLineP1.x);
+                this._p2.y = snapToThisLineP1.y + riseOverRun*(this._p3.x-snapToThisLineP1.x) - this._height;
+                this._p1.y = snapToThisLineP1.y + riseOverRun*(this._p4.x-snapToThisLineP1.x) - this._height;
+                break;
+            case "LEFT":
+                break;
+
+        }
     }
 }
 
 class Triangle extends Shape {
+    constructor(p1, p2, p3){
+        super();
 
+        this._color = "green";
+
+        this._p1 = p1;
+        this._p2 = p2;
+        this._p3 = p3;
+
+        this._type = "TRI"
+    }
+
+    toInsertableArray() {
+        var drawElement = [];
+        drawElement.color = this._color;
+        drawElement.points = [];
+        drawElement.points.push(this._p1);
+        drawElement.points.push(this._p2);
+        drawElement.points.push(this._p3);
+        return drawElement;
+    }
+
+    move() {
+        this._p1.x += this._horizontalVelocity;
+        this._p2.x += this._horizontalVelocity;
+        this._p3.x += this._horizontalVelocity;
+
+
+        this._p1.y += this._verticalVelocity;
+        this._p2.y += this._verticalVelocity;
+        this._p3.y += this._verticalVelocity;
+    }
 }
 
-/*
-function rectangle(color, left, top, width, height, fatal, reaction, move) {
-    var rectangle = [];
-    rectangle.type="RECT";
-    rectangle.color=color;
-    rectangle.p1x=left;
-    rectangle.p1y=top;
-    rectangle.p2x=left+width;
-    rectangle.p2y=top;
-    rectangle.p3x=left+width;
-    rectangle.p3y=top+height;
-    rectangle.p4x=left;
-    rectangle.p4y=top+height;
-    rectangle.fatal=fatal;
-    rectangle.reaction=reaction;
-    rectangle.move=move;
-    return rectangle;
-}
-function rectangleOfTri(color, left, top, width, height, fatal, reaction, move) {
-    var tt = triangle("orange", left, top, left+width, top, left+width/2, top+height/2, fatal, reaction+" UP", move);
-    var bt = triangle("green", left, top+height, left+width/2, top+height/2, left+width, top+height, fatal, reaction+" DOWN", move);
-    var lt = triangle("cyan", left, top, left+width/2, top+height/2, left, top+height, fatal, reaction+" LEFT", move);
-    var rt = triangle("red", left+width, top, left+width, top+height, left+width/2, top+height/2, fatal, reaction+" RIGHT", move);
 
-    return [tt, bt, lt, rt];
 
+function getCollidingPointSet(shape1, shape2) {
+    var points1 = shape1.toInsertableArray().points;
+    var points2 = shape2.toInsertableArray().points;
+
+    var pointSet = [];
+    var indices = [];
+
+    for (var i=0; i<points1.length; i++) {
+        for (var j=0; j<points2.length; j++) {
+            var a1 = points1[i];
+            var a2 = ( i == points1.length-1 ? points1[0] : points1[i+1] );
+            var b1 = points2[j];
+            var b2 = ( j == points2.length-1 ? points2[0] : points2[j+1] );
+
+            if ((i==1 || i==3) && doIntersect(a1, a2, b1, b2)) {
+                indices.push(j);
+                indices.push(j==points2.length-1 ? 0 : j+1);
+            }
+        }
+    }
+
+    pointSet.push(points2[indices[0]]);
+    pointSet.push(points2[indices[1]]);
+
+    return pointSet;
 }
-function triangle(color, p1x, p1y, p2x, p2y, p3x, p3y, fatal, reaction, move) {
-    var triangle = [];
-    triangle.type="TRI";
-    triangle.color=color;
-    triangle.p1x=p1x;
-    triangle.p1y=p1y;
-    triangle.p2x=p2x;
-    triangle.p2y=p2y;
-    triangle.p3x=p3x;
-    triangle.p3y=p3y;
-    triangle.fatal=fatal;
-    triangle.reaction=reaction;
-    triangle.move=move;
-    return triangle;
-}*/
+
+function checkCollision(shape1, shape2) {
+    var points1 = shape1.toInsertableArray().points;
+    var points2 = shape2.toInsertableArray().points;
+    var check = false;
+
+    for (var i=0; i<points1.length; i++) {
+        for (var j=0; j<points2.length; j++) {
+            var a1 = points1[i];
+            var a2 = ( i == points1.length-1 ? points1[0] : points1[i+1] );
+            var b1 = points2[j];
+            var b2 = ( j == points2.length-1 ? points2[0] : points2[j+1] );
+
+            check = check || doIntersect(a1, a2, b1, b2);
+        }
+    }
+
+    return check;
+}
+
+
+// Credit for line intersection code given to
+// https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
+function doIntersect(p1, q1, p2, q2) { 
+    // Find the four orientations needed for general and 
+    // special cases 
+    var o1 = orientation(p1, q1, p2); 
+    var o2 = orientation(p1, q1, q2); 
+    var o3 = orientation(p2, q2, p1); 
+    var o4 = orientation(p2, q2, q1); 
+  
+    // General case 
+    if (o1 != o2 && o3 != o4) 
+        return true; 
+  
+    // Special Cases 
+    // p1, q1 and p2 are colinear and p2 lies on segment p1q1 
+    if (o1 == 0 && onSegment(p1, p2, q1)) return true; 
+  
+    // p1, q1 and q2 are colinear and q2 lies on segment p1q1 
+    if (o2 == 0 && onSegment(p1, q2, q1)) return true; 
+  
+    // p2, q2 and p1 are colinear and p1 lies on segment p2q2 
+    if (o3 == 0 && onSegment(p2, p1, q2)) return true; 
+  
+    // p2, q2 and q1 are colinear and q1 lies on segment p2q2 
+    if (o4 == 0 && onSegment(p2, q1, q2)) return true; 
+  
+    return false; // Doesn't fall in any of the above cases 
+} 
+function onSegment(p, q, r) { 
+    if (q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) && 
+        q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y)) 
+    return true; 
+  
+    return false; 
+}
+function orientation(p, q, r) {
+    var val = (q.y - p.y) * (r.x - q.x) - 
+            (q.x - p.x) * (r.y - q.y); 
+  
+    if (val == 0) return 0; // colinear 
+  
+    return (val > 0)? 1: 2; // clock or counterclock wise 
+}

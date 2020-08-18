@@ -93,54 +93,35 @@ function drawEnv() {
     }
 }
 
-//// !---
-function checkCollision(a, b) {
-    /*if (a.type == "RECT" && b.type == "RECT") {
-        return (a.p1x < b.p2x && a.p2x > b.p1x && a.p1y < b.p4y && a.p4y > b.p1y);
-    } else if (a.type == "RECT" && b.type == "TRI") {
-        return true;
-    }*/
-}
-
 
 function checkAndReactToCharacterCollision(){
-    /*for (var i=0; i<ENVIROMENT.length; i++) {
+    for (var i=0; i<ENVIROMENT.length; i++) {
         if (checkCollision(CHARACTER, ENVIROMENT[i])) {
+            var pnts = getCollidingPointSet(CHARACTER, ENVIROMENT[i]);
             switch (ENVIROMENT[i].reaction) {
                 case "PUSH UP":
-                    CHARACTER.p3y = ENVIROMENT[i].p1y;
-                    CHARACTER.p4y = ENVIROMENT[i].p1y;
-                    CHARACTER.p1y = ENVIROMENT[i].p1y - CHARACTER.height;
-                    CHARACTER.p2y = ENVIROMENT[i].p1y - CHARACTER.height;
-                    CHARACTER.speed = 0;
+                    CHARACTER.snapToLineSegment("BOTTOM", pnts[0], pnts[1]);
+                    CHARACTER.verticalVelocity = 0;
                     break;
                 case "PUSH DOWN":
-                    CHARACTER.p1y = ENVIROMENT[i].p3y;
-                    CHARACTER.p2y = ENVIROMENT[i].p3y;
-                    CHARACTER.p3y = ENVIROMENT[i].p3y + CHARACTER.height;
-                    CHARACTER.p4y = ENVIROMENT[i].p3y + CHARACTER.height;
-                    CHARACTER.speed = 0;
+                    CHARACTER.top = ENVIROMENT[i].top + ENVIROMENT[i].height;
+                    console.log(pnts);
+                    CHARACTER.verticalVelocity = 0;
                     break;
                 case "BOUNCE UP":
-                    CHARACTER.p3y = ENVIROMENT[i].p1y;
-                    CHARACTER.p4y = ENVIROMENT[i].p1y;
-                    CHARACTER.p1y = ENVIROMENT[i].p1y - CHARACTER.height;
-                    CHARACTER.p2y = ENVIROMENT[i].p1y - CHARACTER.height;
-                    CHARACTER.speed *= -.9;
+                    CHARACTER.snapToLineSegment("BOTTOM", pnts[0], pnts[1]);
+                    CHARACTER.verticalVelocity *= -.9;
                     break;
                 case "BOUNCE DOWN":
-                    CHARACTER.p1y = ENVIROMENT[i].p3y;
-                    CHARACTER.p2y = ENVIROMENT[i].p3y;
-                    CHARACTER.p3y = ENVIROMENT[i].p3y + CHARACTER.height;
-                    CHARACTER.p4y = ENVIROMENT[i].p3y + CHARACTER.height;
-                    CHARACTER.speed *= -.9;
+                    CHARACTER.top = ENVIROMENT[i].top + ENVIROMENT[i].height;
+                    CHARACTER.verticalVelocity *= -.9;
                     break;
             }
         }else{
             
         }
-    }*/
-}//// !---
+    }
+}
 
 
 function doOneFrame(){
@@ -157,7 +138,7 @@ function doOneFrame(){
     // Character should be effected by gravity
     CHARACTER.increaseVerticalVelocity(ENVIROMENT.acceleration);
     CHARACTER.move();
-    //checkAndReactToCharacterCollision();
+    checkAndReactToCharacterCollision();
 
     
     // Draw updated screen
